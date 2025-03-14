@@ -1,4 +1,7 @@
 from utils import * 
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 def main():
     master_data_path = "./master_data"
@@ -20,6 +23,12 @@ def main():
 
     print("\nFirst 3 rows of Val Set:")
     print(val[:3])
+
+    # Get the model and train/test it
+    model = get_model('linear', train, val, test)
+    model = get_model('randomforest', train, val, test)
+    model = get_model('svm', train, val, test)
+
 
 if __name__ == "__main__":
     main()
