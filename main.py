@@ -7,7 +7,7 @@ def main():
     master_data_path = "./master_data"
 
     # Call get_data to load the datasets
-    train, val, test = get_data(master_data_path)
+    train, val, test, test_df = get_data(master_data_path)
 
     # Print basic information for verification
     print(f"Train Set Shape: {train.shape}")
@@ -25,10 +25,9 @@ def main():
     print(val[:3])
 
     # Get the model and train/test it
-    model = get_model('linear', train, val, test)
-    model = get_model('randomforest', train, val, test)
-    model = get_model('svm', train, val, test)
-
+    model = get_model('linear', train, val, test, test_df)
+    model = get_model('randomforest', train, val, test, test_df)
+    model = get_model('svm', train, val, test, test_df)
 
 if __name__ == "__main__":
     main()
