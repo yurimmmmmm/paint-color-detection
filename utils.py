@@ -7,7 +7,9 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from eval import evaluate_metrics 
+
+os.makedirs("./output", exist_ok=True)
 
 def get_data(master_data: str):
     selected_columns = [
@@ -26,11 +28,28 @@ def get_data(master_data: str):
     val = val_df.to_numpy(dtype=np.float32)
     test = test_df.to_numpy(dtype=np.float32)
 
-    return train, val, test
-    
-def get_model_linear(train, val, test):
+    return train, val, test, test_df  # test_df for saving predictions
+
+def save_predictions(model_name, true_rgb, predicted_rgb):
+    """
+    Save true and predicted RGB values to a CSV file in the ./output/ directory.
+    """
+    output_path = f"./output/{model_name}_predictions.csv"
+
+    df = pd.DataFrame({
+        "true_R": true_rgb[:, 0], "true_G": true_rgb[:, 1], "true_B": true_rgb[:, 2],
+        "pred_R": predicted_rgb[:, 0], "pred_G": predicted_rgb[:, 1], "pred_B": predicted_rgb[:, 2]
+    })
+
+    df.to_csv(output_path, index=False)
+    print(f"Predictions saved to {output_path}")
+
+    return output_path
+
+def get_model_linear(train, val, test, test_df):
 
     train, val, test = map(lambda x: x / 255, (train, val, test)) 
+
     class LinearModel(nn.Module):
         def __init__(self):
             super(LinearModel, self).__init__()
@@ -66,14 +85,15 @@ def get_model_linear(train, val, test):
         test_inputs = torch.tensor(test[:, :-3], dtype=torch.float32)
         test_targets = torch.tensor(test[:, -3:], dtype=torch.float32)
         test_outputs = model(test_inputs)
-        test_loss = criterion(test_outputs, test_targets)
-        mae = torch.mean(torch.abs(test_outputs - test_targets))
-        print(f'Test Loss (MSE): {test_loss.item():.4f}')
-        print(f'Test MAE: {mae.item():.4f} {mae.item() * 255:.4f}')
+
+    csv_file = save_predictions("linear", test_targets.numpy(), test_outputs.numpy())
+
+    metrics = evaluate_metrics(test_targets.numpy(), test_outputs.numpy())
+    print(metrics)
 
     return model
 
-def get_model_randomforest(train, val, test):
+def get_model_randomforest(train, val, test, test_df):
     train, val, test = map(lambda x: x / 255, (train, val, test)) 
 
     model = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -83,14 +103,15 @@ def get_model_randomforest(train, val, test):
 
     # Test the model
     test_predictions = model.predict(test[:, :-3])
-    test_mse = mean_squared_error(test[:, -3:], test_predictions)
-    test_mae = mean_absolute_error(test[:, -3:], test_predictions)
-    print(f'Test Loss (MSE): {test_mse:.4f}')
-    print(f'Test MAE: {test_mae:.4f} {test_mae * 255:.4f}')
+
+    csv_file = save_predictions("randomforest", test[:, -3:], test_predictions)
+
+    metrics = evaluate_metrics(test[:, -3:], test_predictions)
+    print(metrics)
 
     return model
 
-def get_model_svm(train, val, test):
+def get_model_svm(train, val, test, test_df):
     train, val, test = map(lambda x: x / 255, (train, val, test)) 
 
     model = MultiOutputRegressor(SVR(kernel='linear'))
@@ -100,29 +121,28 @@ def get_model_svm(train, val, test):
 
     # Test the model
     test_predictions = model.predict(test[:, :-3])
-    test_mse = mean_squared_error(test[:, -3:], test_predictions)
-    test_mae = mean_absolute_error(test[:, -3:], test_predictions)
-    print(f'Test Loss (MSE): {test_mse:.4f}')
-    print(f'Test MAE: {test_mae:.4f} {test_mae * 255:.4f}')
+
+    csv_file = save_predictions("svm", test[:, -3:], test_predictions)
+
+    metrics = evaluate_metrics(test[:, -3:], test_predictions)
+    print(metrics)
 
     return model
 
-def get_model(model_name: str, train, val, test):
+def get_model(model_name: str, train, val, test, test_df):
     model = None
     if model_name == 'linear':
-        model = get_model_linear(train, val, test)
+        model = get_model_linear(train, val, test, test_df)
     elif model_name == 'randomforest':
-        model = get_model_randomforest(train, val, test)
+        model = get_model_randomforest(train, val, test, test_df)
     elif model_name == 'svm':
-        model = get_model_svm(train, val, test)
+        model = get_model_svm(train, val, test, test_df)
     return model
 
 def get_colors(filename:str):
     ret = None
-    return ret # np.array #(4, 3)
+    return ret  # np.array #(4, 3)
 
 def infer(model: torch.nn.Module, filename: str):
     ret = None
-    return ret # np.array # (3)
-
-
+    return ret  # np.array # (3)
