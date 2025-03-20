@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 def main():
-    master_data_path = "./master_data"
+    master_data_path = "./data"
 
     # Call get_data to load the datasets
     train, val, test, test_df = get_data(master_data_path)
@@ -28,6 +28,8 @@ def main():
     model = get_model('linear', train, val, test, test_df)
     model = get_model('randomforest', train, val, test, test_df)
     model = get_model('svm', train, val, test, test_df)
-
+    model = get_model('xgboost', train, val, test, test_df)
+    model = get_model('lightgbm', train, val, test, test_df)
+    model = get_model('ensumble', train, val, test, test_df)
 if __name__ == "__main__":
     main()
