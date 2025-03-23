@@ -30,6 +30,6 @@ def main():
     model = get_model('svm', train, val, test, test_df)
     model = get_model('xgboost', train, val, test, test_df)
     model = get_model('lightgbm', train, val, test, test_df)
-    model = get_model('ensumble', train, val, test, test_df)
+    model = get_model('ensemble', train, val, test, test_df)
 if __name__ == "__main__":
     main()
